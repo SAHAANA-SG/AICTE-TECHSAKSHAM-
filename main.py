@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox
 import cv2
 import os
 import csv
@@ -12,14 +12,13 @@ import time
 # Main window setup
 window = tk.Tk()
 window.title("Attendance Management System using Face Recognition")
-window.geometry('900x600')
-window.configure(background='grey85')
+window.geometry('800x500')
+window.configure(background='grey80')
 
 # Directory paths
 training_image_dir = "TrainingImage"
 student_details_file = "StudentDetails/StudentDetails.csv"
 trained_model_file = "TrainingImageLabel/trainner.yml"
-attendance_file = "Attendance.csv"
 
 # Ensure required directories exist
 os.makedirs(training_image_dir, exist_ok=True)
@@ -101,13 +100,9 @@ def train_images():
     except Exception as e:
         messagebox.showerror("Error", str(e))
 
+
 # Function to automatically fill attendance
 def automatic_attendance():
-    subject = subject_combobox.get()
-    if not subject:
-        messagebox.showerror("Error", "Please select a subject.")
-        return
-
     recognizer = cv2.face.LBPHFaceRecognizer_create()
     recognizer.read(trained_model_file)
     detector = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
@@ -130,6 +125,9 @@ def automatic_attendance():
                 face = cv2.resize(face, (200, 200))  # Resize for consistency
                 id_, confidence = recognizer.predict(face)
 
+                # Debugging confidence values
+                print(f"ID: {id_}, Confidence: {confidence}")
+
                 if confidence < 60:  # Adjusted confidence threshold
                     with open(student_details_file, 'r') as f:
                         reader = csv.reader(f)
@@ -139,9 +137,9 @@ def automatic_attendance():
                                 ts = time.time()
                                 date = datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
                                 time_stamp = datetime.datetime.fromtimestamp(ts).strftime("%H:%M:%S")
-                                with open(attendance_file, 'a+', newline='') as file:
+                                with open('Attendance.csv', 'a+', newline='') as file:
                                     writer = csv.writer(file, delimiter=',')
-                                    writer.writerow([id_, name, date, time_stamp, subject])
+                                    writer.writerow([id_, name, date, time_stamp])
                                 cv2.putText(img, name, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
                 else:
                     cv2.putText(img, "Unknown", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
@@ -169,24 +167,19 @@ def view_registered_students():
         messagebox.showerror("Error", str(e))
 
 # GUI Layout
-tk.Label(window, text="Enrollment", bg="grey85", font=('times', 15, 'bold')).place(x=50, y=50)
+tk.Label(window, text="Enrollment", bg="grey80", font=('times', 15, 'bold')).place(x=50, y=50)
 txt_enrollment = tk.Entry(window, width=20, font=('times', 15, 'bold'))
 txt_enrollment.place(x=200, y=50)
 
-tk.Label(window, text="Name", bg="grey85", font=('times', 15, 'bold')).place(x=50, y=100)
+tk.Label(window, text="Name", bg="grey80", font=('times', 15, 'bold')).place(x=50, y=100)
 txt_name = tk.Entry(window, width=20, font=('times', 15, 'bold'))
 txt_name.place(x=200, y=100)
 
-tk.Label(window, text="Subject", bg="grey85", font=('times', 15, 'bold')).place(x=50, y=150)
-subject_combobox = ttk.Combobox(window, width=20, font=('times', 15, 'bold'), state="readonly")
-subject_combobox['values'] = ["Mathematics", "Physics", "Chemistry", "Computer Science"]  # Add your subjects here
-subject_combobox.place(x=200, y=150)
-
 # Buttons
-tk.Button(window, text="Take Images", command=take_images, width=15, font=('times', 15, 'bold')).place(x=50, y=250)
-tk.Button(window, text="Train Images", command=train_images, width=15, font=('times', 15, 'bold')).place(x=250, y=250)
-tk.Button(window, text="Mark Attendance", command=automatic_attendance, width=20, font=('times', 15, 'bold')).place(x=450, y=250)
-tk.Button(window, text="View Registered Students", command=view_registered_students, width=25, font=('times', 15, 'bold')).place(x=650, y=250)
+tk.Button(window, text="Take Images", command=take_images, width=15, font=('times', 15, 'bold')).place(x=50, y=200)
+tk.Button(window, text="Train Images", command=train_images, width=15, font=('times', 15, 'bold')).place(x=250, y=200)
+tk.Button(window, text="Automatic Attendance", command=automatic_attendance, width=20, font=('times', 15, 'bold')).place(x=450, y=200)
+tk.Button(window, text="View Registered Students", command=view_registered_students, width=25, font=('times', 15, 'bold')).place(x=650, y=200)
 
 # Run the application
 window.mainloop()
